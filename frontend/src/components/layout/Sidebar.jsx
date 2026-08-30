@@ -313,8 +313,6 @@ const navigation = [
 function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
   const location = useLocation();
 
-  // const dashboardPath = session?.role === 'admin' ? '/adminDashboard' : '/userDashboard';
-
   const visibleNavigation = navigation
     .map((section) => ({
       ...section,

@@ -1,6 +1,6 @@
 // src/components/layout/DashboardLayout.jsx
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { Leaf } from 'lucide-react';
@@ -8,23 +8,29 @@ import { Link } from 'react-router-dom';
 
 function DashboardLayout({ session, onSignOut }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
+
+  // Handle sign out with navigation
+  const handleSignOut = () => {
+    onSignOut(); // Clear session
+    navigate('/login'); // Navigate to login page
+  };
 
   return (
     <div className="app-shell">
       <div className="app-layout">
-        {/* ✅ Sidebar is included here */}
         <Sidebar
           session={session}
           mobileOpen={mobileSidebarOpen}
           onClose={() => setMobileSidebarOpen(false)}
-          onSignOut={onSignOut}
+          onSignOut={handleSignOut}
         />
 
         <div className="main-workspace">
           <Topbar
             session={session}
-            onSignOut={onSignOut}
+            onSignOut={handleSignOut}
             onOpenMobileMenu={() => setMobileSidebarOpen(true)}
           />
 

@@ -184,7 +184,7 @@ function App() {
           <Route path="/ops/collections" element={<CollectionRecords />} />
           <Route path="/ops/collections/in-progress" element={<ActiveCollections />} />
           <Route path="/ops/drivers" element={<DriverList />} />
-          <Route path="/ops/vehicles" element={<VehicleList />} />
+          <Route path="/fleet/vehicleList" element={<VehicleList />} />
           <Route path="/ops/vehicles/tracking" element={<LiveTracking />} />
 
           {/* ===== FLEET ===== */}
