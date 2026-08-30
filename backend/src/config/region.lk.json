@@ -1,0 +1,16 @@
+{
+  "region": "LK",
+  "timezone": "Asia/Colombo",
+  "units": { "distance": "km", "weight": "kg" },
+  "operations": {
+    "default_depot": { "lat": 6.927, "lon": 79.861 },
+    "city_depots": {
+      "Rajagiriya": { "lat": 6.9025, "lon": 79.9053 },
+      "Kolonnawa": { "lat": 6.9476, "lon": 79.8846 },
+      "Borella": { "lat": 6.9147, "lon": 79.8733 }
+    },
+    "route_threshold": 0.1,
+    "truck_capacity_kg": 3000,
+    "fleet_trucks": ["TRUCK-01", "TRUCK-02", "TRUCK-03", "TRUCK-04", "TRUCK-05"]
+  }
+}

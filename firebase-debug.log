@@ -1,0 +1,23 @@
+[debug] [2026-08-29T22:22:47.559Z] ----------------------------------------------------------------------
+[debug] [2026-08-29T22:22:47.570Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\DELL\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2026-08-29T22:22:47.571Z] CLI Version:   15.26.0
+[debug] [2026-08-29T22:22:47.571Z] Platform:      win32
+[debug] [2026-08-29T22:22:47.572Z] Node Version:  v24.18.0
+[debug] [2026-08-29T22:22:47.573Z] Detected Agent: unknown
+[debug] [2026-08-29T22:22:47.573Z] Time:          Sun Aug 30 2026 01:22:47 GMT+0300 (East Africa Time)
+[debug] [2026-08-29T22:22:47.573Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-08-29T22:22:47.662Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\DELL\.gemini\antigravity\scratch\smart-waste-management-system-main
+
+[debug] [2026-08-29T22:22:54.500Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-08-29T22:22:54.501Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
