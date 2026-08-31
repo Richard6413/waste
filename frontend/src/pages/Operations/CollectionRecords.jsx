@@ -113,7 +113,6 @@ const CollectionRecords = () => {
   const totalCollections = collections.length;
   const completedCount = collections.filter(c => c.status === 'completed' || c.status === 'verified').length;
   const pendingCount = collections.filter(c => c.status === 'pending').length;
-  const failedCount = collections.filter(c => c.status === 'failed').length;
   const totalWeight = collections.reduce((sum, c) => sum + c.weight, 0);
 
   return (
