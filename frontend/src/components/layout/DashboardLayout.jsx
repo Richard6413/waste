@@ -3,18 +3,14 @@ import { useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import { Leaf } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 function DashboardLayout({ session, onSignOut }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const currentYear = new Date().getFullYear();
 
-  // Handle sign out with navigation
   const handleSignOut = () => {
-    onSignOut(); // Clear session
-    navigate('/login'); // Navigate to login page
+    onSignOut();
+    navigate('/login');
   };
 
   return (
@@ -34,36 +30,16 @@ function DashboardLayout({ session, onSignOut }) {
             onOpenMobileMenu={() => setMobileSidebarOpen(true)}
           />
 
-          <main>
+          <main style={{ flex: 1, padding: 0 }}>
             <Outlet />
           </main>
 
           <footer className="app-footer">
-            <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-2">
-                <Leaf className="h-3.5 w-3.5 text-emerald-500" />
-                <span>© {currentYear} JEMAK Waste Management</span>
-                <span className="hidden text-slate-300 sm:inline">•</span>
-                <span className="hidden sm:inline">Operations Platform</span>
-              </div>
-              <div className="flex items-center gap-4">
-                <Link to="/ops" className="transition hover:text-slate-700">
-                  Operations
-                </Link>
-                <Link to="/schedule" className="transition hover:text-slate-700">
-                  Schedule
-                </Link>
-                {session?.role === 'admin' && (
-                  <Link to="/analytics" className="transition hover:text-slate-700">
-                    Analytics
-                  </Link>
-                )}
-                <Link to="/terms" className="transition hover:text-slate-700">
-                  Terms
-                </Link>
-                <Link to="/privacy" className="transition hover:text-slate-700">
-                  Privacy
-                </Link>
+            <div className="flex justify-between items-center">
+              <span>© 2026 JEMAK Waste Management</span>
+              <div className="flex gap-4">
+                <a href="/terms" className="hover:text-slate-700">Terms</a>
+                <a href="/privacy" className="hover:text-slate-700">Privacy</a>
               </div>
             </div>
           </footer>

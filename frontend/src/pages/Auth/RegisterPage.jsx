@@ -1,171 +1,307 @@
-import { useCallback, useMemo, useState } from 'react'
-import PropTypes from 'prop-types'
-import { useNavigate, Link as RouterLink } from 'react-router-dom'
-import { Alert, Box, Button, CircularProgress, Checkbox, FormControlLabel, Paper, Stack, TextField, Typography } from '@mui/material'
-import { UserPlus } from 'lucide-react'
+// frontend/src/pages/Auth/RegisterPage.jsx
+import React, { useState, useCallback } from 'react';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { 
+  Alert, Box, Button, CircularProgress, Paper, 
+  Stack, TextField, Typography, Link, Divider
+} from '@mui/material';
+import { UserPlus, Sparkles, Leaf, Recycle, Truck, Eye, EyeOff } from 'lucide-react';
+import { 
+  auth, 
+  createUserWithEmailAndPassword,
+  updateProfile
+} from '../../config/firebase';
+import { createUserDocument } from '../../utils/userHelpers';
 
-const INITIAL_FORM = Object.freeze({ name: '', email: '', password: '', confirmPassword: '' })
-
-// Perform lightweight client-side validation and return the first blocking issue.
-function validateForm(form) {
-  if (!form.name.trim()) {
-    return 'Please provide your full name.'
-  }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    return 'Enter a valid email address.'
-  }
-  if (form.password.length < 8) {
-    return 'Password must be at least 8 characters long.'
-  }
-  if (form.password !== form.confirmPassword) {
-    return 'Passwords do not match.'
-  }
-  return null
-}
-
-// Guides new municipal users through account creation and redirects after success.
-export default function RegisterPage({ onRegister = () => {} }) {
-  const navigate = useNavigate()
-  const [form, setForm] = useState(INITIAL_FORM)
-  const [loading, setLoading] = useState(false)
-  const [feedback, setFeedback] = useState(null)
-
-  // Memoize validation to keep button states and submission logic aligned.
-  const validationMessage = useMemo(() => validateForm(form), [form])
+export default function RegisterPage() {
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    role: 'user'
+  });
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = useCallback(event => {
-    const { name, value } = event.target
-    setForm(prev => ({ ...prev, [name]: value }))
-  }, [])
+    const { name, value } = event.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
+  }, []);
+
+  const toggleConfirmPasswordVisibility = useCallback(() => {
+    setShowConfirmPassword(prev => !prev);
+  }, []);
 
   const handleSubmit = useCallback(async event => {
-    event.preventDefault()
-    setFeedback(null)
-
-    if (validationMessage) {
-      setFeedback({ type: 'error', message: validationMessage })
-      return
+    event.preventDefault();
+    
+    if (form.password !== form.confirmPassword) {
+      setFeedback({ type: 'error', message: 'Passwords do not match' });
+      return;
     }
 
-    setLoading(true)
+    if (form.password.length < 6) {
+      setFeedback({ type: 'error', message: 'Password must be at least 6 characters' });
+      return;
+    }
+
+    setLoading(true);
+    setFeedback(null);
+
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-        }),
-      })
+      const userCredential = await createUserWithEmailAndPassword(
+        auth, 
+        form.email, 
+        form.password
+      );
+      
+      const user = userCredential.user;
+      
+      await updateProfile(user, {
+        displayName: form.name
+      });
 
-      const payload = await response.json()
-      if (!response.ok) {
-        throw new Error(payload.message || 'Registration failed')
-      }
+      await createUserDocument(user.uid, {
+        name: form.name,
+        email: form.email,
+        role: form.role
+      });
 
-      setFeedback({ type: 'success', message: payload.message || 'Registration successful.' })
-      onRegister(payload.user)
+      setFeedback({ 
+        type: 'success', 
+        message: 'Registration successful! Please sign in.' 
+      });
+      
+      setTimeout(() => {
+        navigate('/login', { 
+          state: { notice: 'Account created successfully. Please sign in.' } 
+        });
+      }, 2000);
 
-      const destination = payload.user.role === 'admin' ? '/adminDashboard' : '/userDashboard'
-      navigate(destination, { replace: true })
     } catch (error) {
-      setFeedback({ type: 'error', message: error.message })
+      console.error('Registration error:', error);
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered. Please sign in instead.';
+      } else if (error.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email address.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password is too weak. Please use a stronger password.';
+      } else if (error.code === 'auth/operation-not-allowed') {
+        errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+      }
+      
+      setFeedback({ type: 'error', message: errorMessage });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [form, navigate, onRegister, validationMessage])
+  }, [form, navigate]);
 
   return (
-    <div className="mx-auto flex min-h-[70vh] max-w-6xl flex-col items-center justify-center gap-10 px-6 py-12">
-      <div className="flex items-center gap-3 rounded-full bg-brand-500/10 px-4 py-2 text-sm font-semibold text-brand-600">
-        <UserPlus className="h-4 w-4" />
-        Create your JEMAK Waste LK account
-      </div>
-      <Paper elevation={8} className="glass-panel w-full max-w-md rounded-4xl p-8">
-        <Stack spacing={4} component="form" onSubmit={handleSubmit}>
-          <Box>
-            <Typography variant="h4" component="h1" fontWeight={600} gutterBottom>
-              Join the pilot programme
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Provide your municipal email address to gain access to the JEMAK Waste workspace.
-            </Typography>
-          </Box>
+    <div className="auth-container">
+      {/* Left Side - Form */}
+      <div className="auth-form-side">
+        <div className="auth-form-wrapper">
+          <div className="auth-brand">
+            <div className="auth-logo">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="auth-brand-name">JEMAK</div>
+              <div className="auth-brand-subtitle">Waste Management</div>
+            </div>
+          </div>
+
+          <div className="auth-header">
+            <h1 className="auth-title">Create Account</h1>
+            <p className="auth-subtitle">Start managing waste collection efficiently</p>
+          </div>
 
           {feedback && (
-            <Alert severity={feedback.type} onClose={() => setFeedback(null)}>
+            <Alert 
+              severity={feedback.type} 
+              onClose={() => setFeedback(null)}
+              className="auth-alert"
+            >
               {feedback.message}
             </Alert>
           )}
 
-          <TextField
-            label="Full name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            autoComplete="name"
-            fullWidth
-          />
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="auth-form-group">
+              <label className="auth-label">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                required
+                autoComplete="name"
+                autoFocus
+                className="auth-input"
+                placeholder="John Doe"
+              />
+            </div>
 
-          <TextField
-            label="Email"
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            autoComplete="email"
-            fullWidth
-          />
+            <div className="auth-form-group">
+              <label className="auth-label">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                required
+                autoComplete="email"
+                className="auth-input"
+                placeholder="you@example.com"
+              />
+            </div>
 
-          <TextField
-            label="Password"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            autoComplete="new-password"
-            fullWidth
-            helperText="Use at least 8 characters with a mix of letters and numbers."
-          />
+            <div className="auth-form-group">
+              <label className="auth-label">Password</label>
+              <div className="auth-password-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  autoComplete="new-password"
+                  className="auth-input auth-password-input"
+                  placeholder="Min 6 characters"
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="auth-eye-btn"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-          <TextField
-            label="Confirm password"
-            name="confirmPassword"
-            type="password"
-            value={form.confirmPassword}
-            onChange={handleChange}
-            required
-            autoComplete="new-password"
-            fullWidth
-          />
+            <div className="auth-form-group">
+              <label className="auth-label">Confirm Password</label>
+              <div className="auth-password-wrapper">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  autoComplete="new-password"
+                  className="auth-input auth-password-input"
+                  placeholder="Confirm your password"
+                />
+                <button
+                  type="button"
+                  onClick={toggleConfirmPasswordVisibility}
+                  className="auth-eye-btn"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+            </div>
 
-          <FormControlLabel
-            control={<Checkbox
-              required
-            />}
-            label={
-              <Typography variant="body2">
-                Agree to terms: I confirm that I have read and accept the collection policy and service terms.
-              </Typography>
-            }
-          />
-          <Button type="submit" variant="contained" disabled={loading} size="large" fullWidth>
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Create account'}
-          </Button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="auth-btn-primary"
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Create Account'}
+            </button>
 
-          <Typography variant="caption" color="text.secondary" textAlign="center">
-            Already have access? <RouterLink to="/login" className="text-brand-600 hover:text-brand-500">Sign in instead</RouterLink> or <RouterLink to="/" className="text-brand-600 hover:text-brand-500">return home</RouterLink>.
-          </Typography>
-        </Stack>
-      </Paper>
+            <p className="auth-footer-text">
+              Already have an account?{' '}
+              <Link component={RouterLink} to="/login" className="auth-link">
+                Sign in
+              </Link>
+            </p>
+          </form>
+        </div>
+      </div>
+
+      {/* Right Side - Garbage Truck Theme */}
+      <div className="auth-theme-side">
+        <div className="auth-theme-content">
+          <div className="auth-theme-animation">
+            <div className="auth-garbage-truck-scene">
+              <div className="auth-garbage-truck">
+                <div className="auth-truck-body">
+                  <div className="auth-truck-cab"></div>
+                  <div className="auth-truck-container">
+                    <div className="auth-truck-waste"></div>
+                  </div>
+                  <div className="auth-truck-wheels">
+                    <div className="auth-wheel auth-wheel-front"></div>
+                    <div className="auth-wheel auth-wheel-back"></div>
+                  </div>
+                </div>
+                <div className="auth-truck-exhaust"></div>
+              </div>
+              <div className="auth-garbage-collectors">
+                <div className="auth-collector auth-collector-1">
+                  <div className="auth-collector-body"></div>
+                  <div className="auth-collector-arm"></div>
+                </div>
+                <div className="auth-collector auth-collector-2">
+                  <div className="auth-collector-body"></div>
+                  <div className="auth-collector-arm"></div>
+                </div>
+              </div>
+              <div className="auth-floating-items">
+                <span className="auth-float-item">🗑️</span>
+                <span className="auth-float-item">♻️</span>
+                <span className="auth-float-item">📦</span>
+                <span className="auth-float-item">🌿</span>
+                <span className="auth-float-item">♻️</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-theme-text">
+            <h2>Join the<br />Recycling Revolution.</h2>
+            <p>Be part of the solution. Start managing your waste collection with JEMAK today.</p>
+            <div className="auth-features">
+              <div className="auth-feature">
+                <Leaf className="h-5 w-5 text-emerald-400" />
+                <span>Eco-Friendly</span>
+              </div>
+              <div className="auth-feature">
+                <Recycle className="h-5 w-5 text-emerald-400" />
+                <span>Zero Waste</span>
+              </div>
+              <div className="auth-feature">
+                <Truck className="h-5 w-5 text-emerald-400" />
+                <span>Smart Logistics</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="auth-theme-footer">
+            <span>© 2026 JEMAK Waste Management. All rights reserved.</span>
+          </div>
+        </div>
+      </div>
     </div>
-  )
-}
-
-RegisterPage.propTypes = {
-  onRegister: PropTypes.func,
+  );
 }

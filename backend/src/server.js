@@ -2,7 +2,7 @@ require('dotenv').config();
 const { connectDB } = require('./db/mongoose');
 const app = require('./app');
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 3440;
 
 // Bootstraps the API after establishing a database connection.
 connectDB()

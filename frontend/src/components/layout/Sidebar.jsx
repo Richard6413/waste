@@ -1,4 +1,4 @@
-// src/components/layout/Sidebar.jsx
+// frontend/src/components/layout/Sidebar.jsx
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { 
   X, LogOut, ShieldCheck, UserCircle, Settings,
@@ -7,7 +7,7 @@ import {
   Leaf, Activity, Cloud, HelpCircle, FileText,
   Calendar, Tag, Database, Award, Target,
   Zap, Brain, Plug, Gauge, ClipboardCheck,
-  Home, Menu as MenuIcon
+  Home, Menu as MenuIcon, ChevronRight, Sparkles
 } from 'lucide-react';
 
 const navigation = [
@@ -317,11 +317,8 @@ function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
-        // Filter by role
         if (item.adminOnly && session?.role !== 'admin') return false;
         if (item.userOnly && session?.role === 'admin') return false;
-        
-        // Filter children by role
         if (item.children) {
           item.children = item.children.filter(child => {
             if (child.adminOnly && session?.role !== 'admin') return false;
@@ -329,7 +326,6 @@ function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
             return true;
           });
         }
-        
         return true;
       }),
     }))
@@ -346,7 +342,9 @@ function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
   };
 
   const handleLinkClick = () => {
-    if (window.innerWidth < 1024) onClose();
+    if (window.innerWidth < 1024 && onClose) {
+      onClose();
+    }
   };
 
   return (
@@ -354,57 +352,106 @@ function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
       {mobileOpen && <div className="sidebar-overlay" onClick={onClose} />}
 
       <aside className={`app-sidebar ${mobileOpen ? 'mobile-sidebar open' : ''}`}>
+        {/* Animated Background with Garbage Truck */}
+        <div className="sidebar-bg-animation">
+          <div className="garbage-truck-scene">
+            <div className="garbage-truck">
+              <div className="truck-body">
+                <div className="truck-cab"></div>
+                <div className="truck-container">
+                  <div className="truck-waste"></div>
+                </div>
+                <div className="truck-wheels">
+                  <div className="wheel wheel-front"></div>
+                  <div className="wheel wheel-back"></div>
+                </div>
+              </div>
+              <div className="truck-exhaust"></div>
+            </div>
+            <div className="garbage-collectors">
+              <div className="collector collector-1">
+                <div className="collector-body"></div>
+                <div className="collector-arm"></div>
+              </div>
+              <div className="collector collector-2">
+                <div className="collector-body"></div>
+                <div className="collector-arm"></div>
+              </div>
+            </div>
+            <div className="floating-waste">
+              <span className="waste-item">🗑️</span>
+              <span className="waste-item">♻️</span>
+              <span className="waste-item">📦</span>
+              <span className="waste-item">🍃</span>
+            </div>
+          </div>
+          <div className="floating-particle particle-1"></div>
+          <div className="floating-particle particle-2"></div>
+          <div className="floating-particle particle-3"></div>
+          <div className="floating-particle particle-4"></div>
+        </div>
+
         {/* Brand */}
         <div className="sidebar-brand">
-          <Link to="/" onClick={handleLinkClick} className="flex items-center gap-3">
-            <div className="sidebar-logo">JM</div>
+          <Link to="/" onClick={handleLinkClick} className="flex items-center gap-3 relative z-10">
+            <div className="sidebar-logo">
+              <Sparkles className="h-5 w-5" />
+            </div>
             <div>
               <div className="sidebar-brand-name">JEMAK</div>
-              <div className="sidebar-brand-subtitle">Operations Platform</div>
+              <div className="sidebar-brand-subtitle">♻️ Waste Management</div>
             </div>
           </Link>
           <button
             onClick={onClose}
-            className="ml-auto rounded-lg p-1 text-slate-400 hover:bg-white/5 hover:text-white lg:hidden"
+            className="ml-auto rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white lg:hidden relative z-10"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="sidebar-nav relative z-10">
           {visibleNavigation.map((section) => (
             <div key={section.section} className="sidebar-section">
-              <div className="sidebar-section-label">{section.section}</div>
+              <div className="sidebar-section-label">
+                <span className="section-dot"></span>
+                {section.section}
+              </div>
               {section.items.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.to, item.end);
                 const childActive = isChildActive(item.children);
+                const hasChildren = item.children && item.children.length > 0;
+                const isExpanded = active || childActive;
 
                 return (
-                  <div key={item.to}>
+                  <div key={item.to} className="sidebar-item-wrapper">
                     <NavLink
                       to={item.to}
                       onClick={handleLinkClick}
-                      className={`sidebar-link ${active || childActive ? 'sidebar-link-active' : ''}`}
+                      className={`sidebar-link ${isExpanded ? 'sidebar-link-active' : ''}`}
                     >
                       <div className="sidebar-link-icon">
                         <Icon className="h-[17px] w-[17px]" />
                       </div>
                       <span className="sidebar-link-label">{item.label}</span>
                       {item.badge && (
-                        <span className="sidebar-link-badge">{item.badge}</span>
+                        <span className="sidebar-link-badge">
+                          <span className="badge-pulse"></span>
+                          {item.badge}
+                        </span>
                       )}
-                      {item.children && (
-                        <span className="text-[10px] text-slate-500 ml-auto">
-                          {active || childActive ? '▾' : '▸'}
+                      {hasChildren && (
+                        <span className={`sidebar-chevron ${isExpanded ? 'chevron-active' : ''}`}>
+                          <ChevronRight className={`h-3.5 w-3.5 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`} />
                         </span>
                       )}
                     </NavLink>
                     
-                    {/* Subcategories */}
-                    {item.children && (active || childActive) && (
-                      <div className="ml-6 space-y-0.5">
+                    {/* Children */}
+                    {hasChildren && isExpanded && (
+                      <div className="sidebar-children">
                         {item.children.map((child) => {
                           const childActive = location.pathname.startsWith(child.to);
                           return (
@@ -412,11 +459,10 @@ function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
                               key={child.to}
                               to={child.to}
                               onClick={handleLinkClick}
-                              className={`sidebar-link !py-1.5 !pl-8 text-xs ${
-                                childActive ? 'sidebar-link-active' : ''
-                              }`}
+                              className={`sidebar-child-link ${childActive ? 'sidebar-child-active' : ''}`}
                             >
-                              <span className="sidebar-link-label">{child.label}</span>
+                              <span className="child-dot"></span>
+                              {child.label}
                             </NavLink>
                           );
                         })}
@@ -430,23 +476,26 @@ function Sidebar({ session, mobileOpen, onClose, onSignOut }) {
         </div>
 
         {/* Bottom */}
-        <div className="sidebar-bottom">
+        <div className="sidebar-bottom relative z-10">
           <div className="sidebar-system-card">
             <div className="flex items-center gap-2">
-              <span className="system-dot" />
-              <span className="text-[11px] font-semibold text-slate-200">System operational</span>
+              <div className="system-status">
+                <span className="system-dot"></span>
+                <span className="system-pulse"></span>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold text-white/80">System Operational</span>
+                <p className="text-[9px] text-white/40 mt-0.5">All systems running normally</p>
+              </div>
             </div>
-            <p className="mt-2 text-[10px] leading-4 text-slate-500">
-              Collection services and platform systems are running normally.
-            </p>
           </div>
           {session && (
             <button
               onClick={onSignOut}
-              className="mt-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-500 transition hover:bg-red-500/10 hover:text-red-300"
+              className="sidebar-signout"
             >
               <LogOut className="h-4 w-4" />
-              Sign out
+              <span>Sign out</span>
             </button>
           )}
         </div>

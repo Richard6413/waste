@@ -1,173 +1,104 @@
 // src/components/layout/Topbar.jsx
+import { Menu, Bell, User, Search, LogOut, Settings, UserCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import {
-  Menu as MenuIcon,
-  Search,
-  Bell,
-  ChevronDown,
-  LogOut,
-  UserCircle,
-  Settings,
-  LogIn,
-  UserPlus,
-  LayoutDashboard,
-  MapPinned,
-  CalendarClock,
-  BarChart3,
-  ShieldCheck,
-  CircleUserRound,
-} from 'lucide-react';
-import {
-  Avatar,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  Divider,
-  Badge,
-} from '@mui/material';
-
-const pageMap = {
-  '/': { title: 'Operations Overview', subtitle: 'Monitor your waste collection network', icon: LayoutDashboard },
-  '/ops': { title: 'Collection Operations', subtitle: 'Plan, dispatch and monitor collection routes', icon: MapPinned },
-  '/schedule': { title: 'Collection Schedule', subtitle: 'Manage upcoming and special collections', icon: CalendarClock },
-  '/analytics': { title: 'Analytics & Reports', subtitle: 'Operational performance and insights', icon: BarChart3 },
-  '/userDashboard': { title: 'My Dashboard', subtitle: 'Your collection account overview', icon: UserCircle },
-  '/adminDashboard': { title: 'Administration', subtitle: 'System administration and controls', icon: ShieldCheck },
-};
+import { Link, useNavigate } from 'react-router-dom';
 
 function Topbar({ session, onSignOut, onOpenMobileMenu }) {
-  const location = useLocation();
-  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
 
-  const context =
-    pageMap[location.pathname] ||
-    Object.entries(pageMap).find(([path]) => path !== '/' && location.pathname.startsWith(path))?.[1] ||
-    pageMap['/'];
-
-  const ContextIcon = context.icon;
-  const initial = session?.name?.[0]?.toUpperCase() || 'S';
+  const handleSignOut = () => {
+    setShowUserMenu(false);
+    if (onSignOut) {
+      onSignOut();
+    }
+    navigate('/login');
+  };
 
   return (
     <header className="app-topbar">
-      <div className="topbar-inner">
-        <div className="topbar-context">
-          <button
+      <div className="topbar-content">
+        <div className="topbar-left">
+          <button 
+            className="menu-btn"
             onClick={onOpenMobileMenu}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 lg:hidden"
           >
-            <MenuIcon className="h-5 w-5" />
+            <Menu size={24} />
           </button>
-          <div className="topbar-context-icon">
-            <ContextIcon className="h-4 w-4" />
-          </div>
           <div>
-            <div className="topbar-title">{context.title}</div>
-            <div className="topbar-subtitle">{context.subtitle}</div>
+            <div className="topbar-title">Command Center</div>
+            <div className="topbar-subtitle">
+              {session?.name ? `Welcome back, ${session.name}` : 'Welcome to JEMAK'}
+            </div>
           </div>
         </div>
 
-        <div className="topbar-actions">
-          <button className="topbar-icon-button hidden sm:flex" title="Search">
-            <Search className="h-4 w-4" />
+        <div className="topbar-right">
+          <button className="topbar-icon-btn">
+            <Search size={18} />
           </button>
-
-          {session && (
-            <button className="topbar-icon-button" title="Notifications">
-              <Bell className="h-4 w-4" />
-              <span className="notification-dot" />
-            </button>
-          )}
-
-          <div className="topbar-divider" />
-
-          <button onClick={(e) => setMenuAnchor(e.currentTarget)} className="user-menu-trigger">
-            <Avatar
-              sx={{
-                width: 36,
-                height: 36,
-                bgcolor: '#ecfdf5',
-                color: '#047857',
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                border: '1px solid #d1fae5',
-              }}
+          <button className="topbar-icon-btn">
+            <Bell size={18} />
+            <span className="notification-dot" />
+          </button>
+          
+          {/* User Menu */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 hover:bg-slate-50 rounded-xl px-2 py-1 transition-all"
             >
-              {session ? initial : <CircleUserRound className="h-4 w-4" />}
-            </Avatar>
-            <div className="hidden text-left md:block">
-              <div className="text-xs font-bold text-slate-800">{session?.name || 'Guest'}</div>
-              <div className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                {session?.role || 'Visitor'}
+              <div className="user-avatar">
+                {session?.name ? session.name.charAt(0).toUpperCase() : 'U'}
               </div>
-            </div>
-            <ChevronDown className="hidden h-3.5 w-3.5 text-slate-400 md:block" />
-          </button>
+              {session?.name && (
+                <span className="text-sm font-medium text-slate-700 hidden md:block">
+                  {session.name.split(' ')[0]}
+                </span>
+              )}
+            </button>
 
-          <Menu
-            anchorEl={menuAnchor}
-            open={Boolean(menuAnchor)}
-            onClose={() => setMenuAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-            PaperProps={{
-              sx: {
-                mt: 1,
-                minWidth: 210,
-                borderRadius: 3,
-                border: '1px solid rgba(226,232,240,0.9)',
-                boxShadow: '0 20px 50px rgba(15,23,42,0.12)',
-              },
-            }}
-          >
-            {session ? (
-              <>
-                <MenuItem
-                  component={NavLink}
-                  to={session.role === 'admin' ? '/adminDashboard' : '/userDashboard'}
-                  onClick={() => setMenuAnchor(null)}
+            {/* Dropdown Menu */}
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-1 z-50">
+                <div className="px-4 py-3 border-b border-slate-100">
+                  <p className="text-sm font-semibold text-slate-900">{session?.name || 'User'}</p>
+                  <p className="text-xs text-slate-500">{session?.email || 'user@example.com'}</p>
+                  {session?.role && (
+                    <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 rounded-full">
+                      {session.role}
+                    </span>
+                  )}
+                </div>
+                
+                <Link
+                  to="/profile"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  onClick={() => setShowUserMenu(false)}
                 >
-                  <ListItemIcon>
-                    <UserCircle className="h-4 w-4" />
-                  </ListItemIcon>
-                  Dashboard
-                </MenuItem>
-                <MenuItem component={NavLink} to="/settings" onClick={() => setMenuAnchor(null)}>
-                  <ListItemIcon>
-                    <Settings className="h-4 w-4" />
-                  </ListItemIcon>
+                  <UserCircle size={16} />
+                  Profile
+                </Link>
+                
+                <Link
+                  to="/settings"
+                  className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  <Settings size={16} />
                   Settings
-                </MenuItem>
-                <Divider />
-                <MenuItem
-                  onClick={() => {
-                    setMenuAnchor(null);
-                    onSignOut();
-                  }}
+                </Link>
+                
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 border-t border-slate-100 mt-1"
                 >
-                  <ListItemIcon>
-                    <LogOut className="h-4 w-4 text-red-500" />
-                  </ListItemIcon>
+                  <LogOut size={16} />
                   Sign out
-                </MenuItem>
-              </>
-            ) : (
-              <>
-                <MenuItem component={NavLink} to="/login" onClick={() => setMenuAnchor(null)}>
-                  <ListItemIcon>
-                    <LogIn className="h-4 w-4" />
-                  </ListItemIcon>
-                  Sign in
-                </MenuItem>
-                <MenuItem component={NavLink} to="/register" onClick={() => setMenuAnchor(null)}>
-                  <ListItemIcon>
-                    <UserPlus className="h-4 w-4" />
-                  </ListItemIcon>
-                  Create account
-                </MenuItem>
-              </>
+                </button>
+              </div>
             )}
-          </Menu>
+          </div>
         </div>
       </div>
     </header>

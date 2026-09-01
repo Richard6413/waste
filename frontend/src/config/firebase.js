@@ -4,7 +4,11 @@ import {
   getAuth, 
   GoogleAuthProvider, 
   signInWithPopup, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
   signOut,
+  sendPasswordResetEmail,
   onAuthStateChanged 
 } from 'firebase/auth';
 import { 
@@ -46,17 +50,22 @@ const storage = getStorage(app);
 // Providers
 const googleProvider = new GoogleAuthProvider();
 
+// Export everything
 export {
   app,
   auth,
   db,
   storage,
   googleProvider,
-  // Auth
+  // Auth functions
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
   signOut,
   onAuthStateChanged,
-  // Firestore
+  sendPasswordResetEmail,
+  // Firestore functions
   collection,
   doc,
   getDocs,
@@ -70,7 +79,7 @@ export {
   where,
   orderBy,
   limit,
-  // Storage
+  // Storage functions
   ref,
   uploadBytes,
   getDownloadURL,
