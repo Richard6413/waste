@@ -1,8 +1,14 @@
 {
-  "devDependencies": {
-    "dotenv": "^17.2.3"
+  "name": "jemak-waste",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js"
   },
   "dependencies": {
     "firebase": "^12.18.0"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.3"
   }
 }
