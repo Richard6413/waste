@@ -4,13 +4,17 @@ const app = require('./app');
 
 const PORT = process.env.PORT || 3440;
 
-// Bootstraps the API after establishing a database connection.
+function listen() {
+  app.listen(PORT, () => console.log(`API up on :${PORT}`));
+}
+
 connectDB()
   .then(() => {
     console.log('✅ MongoDB connected');
-    app.listen(PORT, () => console.log(`API up on :${PORT}`));
+    listen();
   })
-  .catch(err => {
-    console.error('DB connection failed:', err);
-    process.exit(1);
+  .catch((err) => {
+    console.error('DB connection failed:', err.message || err);
+    console.warn('Starting API without MongoDB (catalog endpoints still available).');
+    listen();
   });
