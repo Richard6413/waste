@@ -5,6 +5,17 @@ import DashboardLayout from './components/layout/DashboardLayout';
 import Home from './pages/Home';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
+import OperationsDashboard from './pages/Operations/Dashboard';
+import SchedulePage from './pages/Schedule/page';
+import FleetDashboard from './pages/Fleet/Dashboard';
+import HouseholdList from './pages/Customers/HouseholdList';
+import WasteTypesList from './pages/Waste/WasteTypesList';
+import BillingDashboard from './pages/Billing/Dashboard';
+import AnalyticsDashboard from './pages/Analytics/AnalyticsDashboard';
+import UserDashboard from './pages/Dashboards/UserDashboard';
+import AdminDashboard from './pages/Dashboards/AdminDashboard';
+import HelpSupport from './pages/Utilities/HelpSupport';
+import SystemSettings from './pages/Admin/SystemSettings';
 import { auth, onAuthStateChanged, signOut } from './config/firebase';
 import { getUserData } from './utils/userHelpers';
 import './index.css';
@@ -100,20 +111,18 @@ function App() {
           }
         >
           <Route index element={<Home session={session} />} />
-          <Route path="ops" element={<div>Operations Page</div>} />
-          <Route path="schedule" element={<div>Schedule Page</div>} />
-          <Route path="fleet" element={<div>Fleet Page</div>} />
-          <Route path="customers" element={<div>Customers Page</div>} />
-          <Route path="waste" element={<div>Waste Management Page</div>} />
-          <Route path="recycling" element={<div>Recycling Page</div>} />
-          <Route path="billing" element={<div>Billing Page</div>} />
-          <Route path="analytics" element={<div>Analytics Page</div>} />
-          <Route path="settings" element={<div>Settings Page</div>} />
-          <Route path="help" element={<div>Help Page</div>} />
-          
-          {/* Role-based redirects */}
-          <Route path="adminDashboard" element={<Navigate to="/" replace />} />
-          <Route path="userDashboard" element={<Navigate to="/" replace />} />
+          <Route path="ops" element={<OperationsDashboard />} />
+          <Route path="schedule" element={<SchedulePage session={session} />} />
+          <Route path="fleet" element={<FleetDashboard />} />
+          <Route path="customers" element={<HouseholdList />} />
+          <Route path="waste" element={<WasteTypesList />} />
+          <Route path="recycling" element={<WasteTypesList />} />
+          <Route path="billing" element={<BillingDashboard />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
+          <Route path="settings" element={<SystemSettings />} />
+          <Route path="help" element={<HelpSupport />} />
+          <Route path="adminDashboard" element={<AdminDashboard />} />
+          <Route path="userDashboard" element={<UserDashboard />} />
         </Route>
         
         {/* Catch all */}

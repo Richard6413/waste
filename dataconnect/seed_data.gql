@@ -1,0 +1,91 @@
+mutation CreateSeedData @transaction {
+  user_insertMany(data: [
+    {
+      id: "71343753-33ba-4f05-8947-06f1d8c1c111",
+      email: "alice@example.com",
+      role: "admin",
+      displayName: "Alice"
+    },
+    {
+      id: "71343753-33ba-4f05-8947-06f1d8c1c112",
+      email: "bob@example.com",
+      role: "driver",
+      displayName: "Bob"
+    },
+    {
+      id: "71343753-33ba-4f05-8947-06f1d8c1c113",
+      email: "charlie@example.com",
+      role: "driver",
+      displayName: "Charlie"
+    }
+  ])
+  pickupRequest_insertMany(data: [
+    {
+      id: "82343753-33ba-4f05-8947-06f1d8c1c101",
+      status: "pending",
+      requestDate: "2023-10-01T10:00:00Z",
+      location: "123 Maple St",
+      userId: "71343753-33ba-4f05-8947-06f1d8c1c111"
+    },
+    {
+      id: "82343753-33ba-4f05-8947-06f1d8c1c102",
+      status: "scheduled",
+      requestDate: "2023-10-02T12:00:00Z",
+      location: "456 Oak St",
+      userId: "71343753-33ba-4f05-8947-06f1d8c1c111"
+    },
+    {
+      id: "82343753-33ba-4f05-8947-06f1d8c1c103",
+      status: "completed",
+      requestDate: "2023-10-03T09:00:00Z",
+      location: "789 Pine St",
+      userId: "71343753-33ba-4f05-8947-06f1d8c1c112"
+    }
+  ])
+  report_insertMany(data: [
+    {
+      id: "92343753-33ba-4f05-8947-06f1d8c1c121",
+      type: "damaged",
+      location: "123 Maple St",
+      status: "open",
+      reporterId: "71343753-33ba-4f05-8947-06f1d8c1c112"
+    },
+    {
+      id: "92343753-33ba-4f05-8947-06f1d8c1c122",
+      type: "delay",
+      location: "456 Oak St",
+      status: "resolved",
+      reporterId: "71343753-33ba-4f05-8947-06f1d8c1c113"
+    }
+  ])
+  route_insertMany(data: [
+    {
+      id: "a2343753-33ba-4f05-8947-06f1d8c1c131",
+      assignedDate: "2023-10-05",
+      routeName: "North Route",
+      estimatedDuration: 120,
+      driverId: "71343753-33ba-4f05-8947-06f1d8c1c112"
+    },
+    {
+      id: "a2343753-33ba-4f05-8947-06f1d8c1c132",
+      assignedDate: "2023-10-05",
+      routeName: "South Route",
+      estimatedDuration: 90,
+      driverId: "71343753-33ba-4f05-8947-06f1d8c1c113"
+    }
+  ])
+  routeItem_insertMany(data: [
+    {
+      id: "b2343753-33ba-4f05-8947-06f1d8c1c141",
+      sequenceNumber: 1,
+      routeId: "a2343753-33ba-4f05-8947-06f1d8c1c131",
+      pickupRequestId: "82343753-33ba-4f05-8947-06f1d8c1c101"
+    },
+    {
+      id: "b2343753-33ba-4f05-8947-06f1d8c1c142",
+      sequenceNumber: 2,
+      routeId: "a2343753-33ba-4f05-8947-06f1d8c1c131",
+      pickupRequestId: "82343753-33ba-4f05-8947-06f1d8c1c102"
+    }
+  ])
+}

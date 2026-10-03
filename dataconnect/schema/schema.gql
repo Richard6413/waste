@@ -1,0 +1,40 @@
+type User @table {
+  email: String!
+  role: String!
+  phoneNumber: String
+  address: String
+  displayName: String
+}
+
+type PickupRequest @table {
+  status: String!
+  requestDate: Timestamp!
+  location: String!
+  pickupDate: Timestamp
+  notes: String
+  photoUrl: String
+  user: User!
+}
+
+type Route @table {
+  assignedDate: Date!
+  routeName: String
+  estimatedDuration: Int
+  driver: User!
+}
+
+type RouteItem @table {
+  sequenceNumber: Int!
+  arrivalTime: Timestamp
+  route: Route!
+  pickupRequest: PickupRequest!
+}
+
+type Report @table {
+  type: String!
+  location: String!
+  status: String!
+  photoUrl: String
+  description: String
+  reporter: User!
+}

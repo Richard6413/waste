@@ -5,7 +5,7 @@ const app = require('./app');
 const PORT = process.env.PORT || 3440;
 
 function listen() {
-  app.listen(PORT, () => console.log(`API up on :${PORT}`));
+  app.listen(PORT, '0.0.0.0', () => console.log(`API up on :${PORT}`));
 }
 
 connectDB()

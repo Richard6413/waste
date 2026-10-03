@@ -1,0 +1,107 @@
+mutation CreateUser {
+  user_insert(data: {id: "550e8400-e29b-41d4-a716-446655440000", email: "test@example.com", role: "admin"})
+}
+
+mutation CreatePickupRequest($data: PickupRequest_Data!) @auth(level: USER) {
+  pickupRequest_insert(data: $data)
+}
+
+mutation DeletePickupRequest($id: UUID!) @auth(level: USER) {
+  pickupRequest_delete(id: $id)
+}
+
+mutation UpdatePickupRequest($id: UUID!, $data: PickupRequest_Data!) @auth(level: USER) {
+  pickupRequest_update(id: $id, data: $data)
+}
+
+query GetPickupRequest($id: UUID!) @auth(level: USER) {
+  pickupRequest(id: $id) {
+    status
+    location
+  }
+}
+
+query ListPickupRequests @auth(level: USER) {
+  pickupRequests(where: {userId: {eq_expr: "auth.uid"}}) {
+    id
+    status
+  }
+}
+
+mutation CreateRoute($data: Route_Data!) @auth(level: USER) {
+  route_insert(data: $data)
+}
+
+mutation DeleteRoute($id: UUID!) @auth(level: USER) {
+  route_delete(id: $id)
+}
+
+mutation UpdateRoute($id: UUID!, $data: Route_Data!) @auth(level: USER) {
+  route_update(id: $id, data: $data)
+}
+
+query GetRoute($id: UUID!) @auth(level: USER) {
+  route(id: $id) {
+    routeName
+    assignedDate
+  }
+}
+
+query ListRoutes @auth(level: USER) {
+  routes {
+    id
+    routeName
+  }
+}
+
+mutation CreateRouteItem($data: RouteItem_Data!) @auth(level: USER) {
+  routeItem_insert(data: $data)
+}
+
+mutation DeleteRouteItem($id: UUID!) @auth(level: USER) {
+  routeItem_delete(id: $id)
+}
+
+mutation UpdateRouteItem($id: UUID!, $data: RouteItem_Data!) @auth(level: USER) {
+  routeItem_update(id: $id, data: $data)
+}
+
+query GetRouteItem($id: UUID!) @auth(level: USER) {
+  routeItem(id: $id) {
+    sequenceNumber
+  }
+}
+
+query ListRouteItems @auth(level: USER) {
+  routeItems {
+    id
+    sequenceNumber
+  }
+}
+
+mutation CreateReport($data: Report_Data!) @auth(level: USER) {
+  report_insert(data: $data)
+}
+
+mutation DeleteReport($id: UUID!) @auth(level: USER) {
+  report_delete(id: $id)
+}
+
+mutation UpdateReport($id: UUID!, $data: Report_Data!) @auth(level: USER) {
+  report_update(id: $id, data: $data)
+}
+
+query GetReport($id: UUID!) @auth(level: USER) {
+  report(id: $id) {
+    type
+    location
+  }
+}
+
+query ListReports @auth(level: PUBLIC, insecureReason: "Publicly visible reports help maintain transparency for community cleanup efforts.") {
+  reports {
+    id
+    type
+    status
+  }
+}

@@ -1,68 +1,18 @@
-rules_version = '2';
+rules_version='2'
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions to check for roles in custom claims
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isAdmin() {
-      return isSignedIn() && request.auth.token.role == 'Admin';
-    }
-    
-    function isDirector() {
-        return isSignedIn() && request.auth.token.role == 'Director';
-    }
-
-    function isDataEntrant() {
-        return isSignedIn() && request.auth.token.role == 'Data Entrant';
-    }
-
-    // Tenant data can be read by admin/director, written by admin/data-entrant, but balance is protected.
-    match /tenants/{tenantId} {
-      allow read: if isAdmin() || isDirector();
-      // Allow create/update by admin/data-entrant, but prevent changing the balance field.
-      allow create, update: if (isAdmin() || isDataEntrant()) && !('balance' in request.resource.data);
-      allow delete: if isAdmin();
-    }
-
-    // Payments can be read by admin/director. Created by data-entrants. Only backend can update status.
-    match /payments/{paymentId} {
-      allow read: if isAdmin() || isDirector();
-      allow create: if isDataEntrant(); 
-      // Only backend functions should update status to completed/settled
-      allow update: if (isAdmin() || isDataEntrant()) && !('status' in request.resource.data);
-      allow delete: if isAdmin();
-    }
-
-    // Settlements are highly sensitive. Read-only for directors/admins.
-    match /settlements/{settlementId} {
-      allow read: if isAdmin() || isDirector();
-      allow write: if false; // Only backend can create/update
-    }
-
-    // Callback logs are for auditing by admins/directors.
-    match /callbacks/{provider}/{logId} {
-        allow read: if isAdmin() || isDirector();
-        allow write: if false; // Only backend can write
-    }
-
-    // Receipts can be viewed by internal staff.
-    match /receipts/{receiptId} {
-        allow read: if isAdmin() || isDirector() || isDataEntrant();
-        allow write: if false; // Only backend can write
-    }
-    
-    // User roles can be managed by Admins.
-    match /users/{userId} {
-      allow read, write: if isAdmin();
-    }
-    
-    // Default deny all other collections
     match /{document=**} {
-      allow read, write: if false;
+      // This rule allows anyone with your database reference to view, edit,
+      // and delete all data in your database. It is useful for getting
+      // started, but it is configured to expire after 30 days because it
+      // leaves your app open to attackers. At that time, all client
+      // requests to your database will be denied.
+      //
+      // Make sure to write security rules for your app before that time, or
+      // else all client requests to your database will be denied until you
+      // update your rules.
+      allow read, write: if request.time < timestamp.date(2026, 10, 28);
     }
   }
 }

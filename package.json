@@ -1,14 +1,20 @@
 {
   "name": "jemak-waste",
   "version": "1.0.0",
+  "main": "index.js",
   "scripts": {
     "dev": "node index.js",
-    "start": "node index.js"
+    "start": "concurrently \"yarn backend:start\" \"yarn frontend:start\" \"firebase emulators:start\"",
+    "backend:start": "cd backend && yarn start",
+    "frontend:start": "cd frontend && yarn start",
+    "firebase:start": "firebase emulators:start"
   },
   "dependencies": {
-    "firebase": "^12.18.0"
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "firebase": "^9.23.0"
   },
   "devDependencies": {
-    "dotenv": "^17.2.3"
+    "concurrently": "^10.0.5"
   }
 }
