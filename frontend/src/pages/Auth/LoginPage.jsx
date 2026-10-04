@@ -18,6 +18,7 @@ import {
   sendPasswordResetEmail
 } from '../../config/firebase';
 import { getUserData } from '../../utils/userHelpers';
+import { signInDemo } from '../../utils/demoAuth';
 
 export default function LoginPage({ onLogin = () => {} }) {
     const navigate = useNavigate();
@@ -68,6 +69,16 @@ export default function LoginPage({ onLogin = () => {} }) {
         setLoading(true);
         setFeedback(null);
 
+        // Local demo accounts work without Firebase; fall through to Firebase when they don't match.
+        const demoSession = signInDemo(form.email, form.password);
+        if (demoSession) {
+            setFeedback({ type: 'success', message: 'Signed in with a local demo account.' });
+            onLogin(demoSession);
+            setLoading(false);
+            navigate(demoSession.role === 'admin' ? '/adminDashboard' : '/', { replace: true });
+            return;
+        }
+
         try {
             const userCredential = await signInWithEmailAndPassword(auth, form.email, form.password);
             const user = userCredential.user;
@@ -102,6 +113,8 @@ export default function LoginPage({ onLogin = () => {} }) {
                 errorMessage = 'Invalid email address.';
             } else if (error.code === 'auth/user-disabled') {
                 errorMessage = 'This account has been disabled.';
+            } else if (error.code === 'auth/configuration-not-found' || error.code === 'auth/api-key-not-valid') {
+                errorMessage = 'Firebase sign-in is not configured. Use a local demo account instead.';
             }
             
             setFeedback({ type: 'error', message: errorMessage });

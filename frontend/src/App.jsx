@@ -18,13 +18,14 @@ import HelpSupport from './pages/Utilities/HelpSupport';
 import SystemSettings from './pages/Admin/SystemSettings';
 import { auth, onAuthStateChanged, signOut } from './config/firebase';
 import { getUserData } from './utils/userHelpers';
+import { loadDemoSession, clearDemoSession } from './utils/demoAuth';
 import './index.css';
 
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen to Firebase auth state
+  // Restore a local demo session when Firebase has no user for it.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -52,7 +53,7 @@ function App() {
           });
         }
       } else {
-        setSession(null);
+        setSession(loadDemoSession());
       }
       setLoading(false);
     });
@@ -70,6 +71,7 @@ function App() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      clearDemoSession();
       setSession(null);
     }
   };
