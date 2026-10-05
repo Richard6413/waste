@@ -25,7 +25,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Listen to Firebase auth state
+  // Restore a local demo session when Firebase has no user for it.
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -53,6 +53,7 @@ function App() {
           });
         }
       } else {
+<<<<<<< HEAD
         // Restore JWT-based session from localStorage
         const token = localStorage.getItem('authToken');
         const savedSession = loadDemoSession();
@@ -70,6 +71,9 @@ function App() {
         } else {
           setSession(null);
         }
+=======
+        setSession(loadDemoSession());
+>>>>>>> 57fed683078d4aaf006b6eabe974ff8f57e9f1f4
       }
       setLoading(false);
     });
@@ -91,7 +95,10 @@ function App() {
       console.error('Logout error:', error);
     } finally {
       clearDemoSession();
+<<<<<<< HEAD
       localStorage.removeItem('authToken');
+=======
+>>>>>>> 57fed683078d4aaf006b6eabe974ff8f57e9f1f4
       setSession(null);
     }
   };

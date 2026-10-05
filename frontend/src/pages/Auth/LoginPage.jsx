@@ -18,8 +18,6 @@ import {
   sendPasswordResetEmail
 } from '../../config/firebase';
 import { getUserData } from '../../utils/userHelpers';
-import { signInDemo } from '../../utils/demoAuth';
-import { api } from '../../api/client';
 
 export default function LoginPage({ onLogin = () => {} }) {
     const navigate = useNavigate();
@@ -70,6 +68,16 @@ export default function LoginPage({ onLogin = () => {} }) {
         setLoading(true);
         setFeedback(null);
 
+        // Local demo accounts work without Firebase; fall through to Firebase when they don't match.
+        const demoSession = signInDemo(form.email, form.password);
+        if (demoSession) {
+            setFeedback({ type: 'success', message: 'Signed in with a local demo account.' });
+            onLogin(demoSession);
+            setLoading(false);
+            navigate(demoSession.role === 'admin' ? '/adminDashboard' : '/', { replace: true });
+            return;
+        }
+
         // Local demo accounts work without backend; fall through to backend auth when they don't match.
         const demoSession = signInDemo(form.email, form.password);
         if (demoSession) {
@@ -108,15 +116,16 @@ export default function LoginPage({ onLogin = () => {} }) {
             console.error('Login error:', error);
             let errorMessage = 'Login failed. Please check your credentials.';
             
-            // Handle specific error messages from backend
-            if (error.message.includes('domain') || error.message.includes('@jemakwaste.com')) {
-                errorMessage = error.message;
-            } else if (error.message.includes('locked') || error.message.includes('Too many failed attempts')) {
-                errorMessage = 'Account locked due to repeated failed attempts. Please try again later.';
-            } else if (error.message.includes('not active')) {
-                errorMessage = 'This account is not active. Please contact support.';
-            } else if (error.message.includes('Invalid email or password')) {
-                errorMessage = 'Invalid email or password.';
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = 'No account found with this email.';
+            } else if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Incorrect password. Please try again.';
+            } else if (error.code === 'auth/too-many-requests') {
+                errorMessage = 'Too many failed attempts. Please try again later.';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Invalid email address.';
+            } else if (error.code === 'auth/user-disabled') {
+                errorMessage = 'This account has been disabled.';
             }
             
             setFeedback({ type: 'error', message: errorMessage });
