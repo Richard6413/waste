@@ -1,4 +1,5 @@
 const DEMO_KEY = 'jemak_demo_session';
+const AUTH_TOKEN_KEY = 'authToken';
 
 export const DEMO_ACCOUNTS = [
   { email: 'admin@jemakwaste.com', password: 'Admin@123', name: 'Nimali Admin', role: 'admin' },
@@ -17,10 +18,14 @@ export function loadDemoSession() {
 
 export function saveDemoSession(session) {
   localStorage.setItem(DEMO_KEY, JSON.stringify(session));
+  if (session.token) {
+    localStorage.setItem(AUTH_TOKEN_KEY, session.token);
+  }
 }
 
 export function clearDemoSession() {
   localStorage.removeItem(DEMO_KEY);
+  localStorage.removeItem(AUTH_TOKEN_KEY);
 }
 
 export function signInDemo(email, password) {

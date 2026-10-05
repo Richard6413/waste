@@ -18,6 +18,8 @@ import {
   sendPasswordResetEmail
 } from '../../config/firebase';
 import { getUserData } from '../../utils/userHelpers';
+import { signInDemo } from '../../utils/demoAuth';
+import { api } from '../../api/client';
 
 export default function LoginPage({ onLogin = () => {} }) {
     const navigate = useNavigate();
@@ -68,40 +70,53 @@ export default function LoginPage({ onLogin = () => {} }) {
         setLoading(true);
         setFeedback(null);
 
+        // Local demo accounts work without backend; fall through to backend auth when they don't match.
+        const demoSession = signInDemo(form.email, form.password);
+        if (demoSession) {
+            setFeedback({ type: 'success', message: 'Signed in with a local demo account.' });
+            onLogin(demoSession);
+            setLoading(false);
+            navigate(demoSession.role === 'admin' ? '/adminDashboard' : '/', { replace: true });
+            return;
+        }
+
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, form.email, form.password);
-            const user = userCredential.user;
+            // Use backend auth endpoint with JWT
+            const response = await api.login(form.email, form.password);
             
-            const userData = await getUserData(user.uid);
-            
-            const sessionData = {
-                uid: user.uid,
-                email: user.email,
-                name: user.displayName || userData?.name || user.email?.split('@')[0] || 'User',
-                role: userData?.role || 'user',
-                token: await user.getIdToken(),
-                ...userData
-            };
+            if (response.ok && response.token) {
+                // Store JWT token
+                localStorage.setItem('authToken', response.token);
+                
+                const sessionData = {
+                    uid: response.user.id,
+                    email: response.user.email,
+                    name: response.user.name,
+                    role: response.user.role,
+                    token: response.token,
+                };
 
-            setFeedback({ type: 'success', message: 'Signed in successfully.' });
-            onLogin(sessionData);
+                setFeedback({ type: 'success', message: 'Signed in successfully.' });
+                onLogin(sessionData);
 
-            const destination = sessionData.role === 'admin' ? '/adminDashboard' : '/';
-            navigate(destination, { replace: true });
+                const destination = sessionData.role === 'admin' ? '/adminDashboard' : '/';
+                navigate(destination, { replace: true });
+            } else {
+                setFeedback({ type: 'error', message: response.message || 'Login failed. Please check your credentials.' });
+            }
         } catch (error) {
             console.error('Login error:', error);
             let errorMessage = 'Login failed. Please check your credentials.';
             
-            if (error.code === 'auth/user-not-found') {
-                errorMessage = 'No account found with this email.';
-            } else if (error.code === 'auth/wrong-password') {
-                errorMessage = 'Incorrect password. Please try again.';
-            } else if (error.code === 'auth/too-many-requests') {
-                errorMessage = 'Too many failed attempts. Please try again later.';
-            } else if (error.code === 'auth/invalid-email') {
-                errorMessage = 'Invalid email address.';
-            } else if (error.code === 'auth/user-disabled') {
-                errorMessage = 'This account has been disabled.';
+            // Handle specific error messages from backend
+            if (error.message.includes('domain') || error.message.includes('@jemakwaste.com')) {
+                errorMessage = error.message;
+            } else if (error.message.includes('locked') || error.message.includes('Too many failed attempts')) {
+                errorMessage = 'Account locked due to repeated failed attempts. Please try again later.';
+            } else if (error.message.includes('not active')) {
+                errorMessage = 'This account is not active. Please contact support.';
+            } else if (error.message.includes('Invalid email or password')) {
+                errorMessage = 'Invalid email or password.';
             }
             
             setFeedback({ type: 'error', message: errorMessage });
@@ -308,7 +323,7 @@ export default function LoginPage({ onLogin = () => {} }) {
                                                 autoComplete={loginMethod === 'email' ? 'email' : 'tel'}
                                                 autoFocus
                                                 className="auth-input auth-input-transparent"
-                                                placeholder={loginMethod === 'email' ? 'you@example.com' : '+256 700 000 000'}
+                                                placeholder={loginMethod === 'email' ? 'you@jemakwaste.com' : '+256 700 000 000'}
                                             />
                                         </div>
 

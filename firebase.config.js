@@ -1,10 +1,8 @@
 const firebaseConfig = {
-    apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-    authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  };
-  
-  module.exports = firebaseConfig;
+  apiKey: "AIzaSyDtI_cFldUzVFSudJhkCAUjF2PE6b6nShc",
+  authDomain: "ledger-pulse-bmk.firebaseapp.com",
+  projectId: "ledger-pulse-bmk",
+  storageBucket: "ledger-pulse-bmk.firebasestorage.app",
+  messagingSenderId: "236685504513",
+  appId: "1:236685504513:web:4a66bedba56b72d6cf1000"
+};

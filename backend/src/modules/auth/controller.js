@@ -1,5 +1,7 @@
 const { z } = require('zod');
+const jwt = require('jsonwebtoken');
 const authService = require('./service');
+const { isAllowedDomain, JWT_SECRET } = require('../../middleware/auth');
 
 const { ERROR_CODES } = authService;
 
@@ -21,7 +23,26 @@ const registerSchema = z.object({
   password: z.string({ required_error: 'Password is required' }).min(8, 'Password must be at least 8 characters'),
 });
 
-// Authenticates a resident or admin and returns a trimmed user profile.
+// JWT token expiration
+const TOKEN_EXPIRY = '24h';
+
+/**
+ * Generates a JWT token for an authenticated user.
+ */
+function generateToken(user) {
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    JWT_SECRET,
+    { expiresIn: TOKEN_EXPIRY }
+  );
+}
+
+// Authenticates a user and returns a JWT token + user profile.
 async function login(req, res, next) {
   try {
     const parsed = loginSchema.safeParse(req.body);
@@ -30,16 +51,25 @@ async function login(req, res, next) {
     }
 
     const { email, password } = parsed.data;
+
+    // Domain restriction: only allow emails from the configured domain
+    if (!isAllowedDomain(email)) {
+      return respondWithError(res, 403, `Only @${process.env.ALLOWED_EMAIL_DOMAIN || 'jemakwaste.com'} accounts are allowed`);
+    }
+
     const user = await authService.authenticate(email, password);
 
     if (!user) {
       return respondWithError(res, 401, 'Invalid email or password');
     }
 
+    const token = generateToken(user);
+
     return res.json({
       ok: true,
       message: `Welcome back, ${user.name}`,
       user,
+      token,
     });
   } catch (error) {
     if (error.code === ERROR_CODES.inactive) {
@@ -61,12 +91,20 @@ async function register(req, res, next) {
     }
 
     const payload = parsed.data;
+
+    // Domain restriction on registration too
+    if (!isAllowedDomain(payload.email)) {
+      return respondWithError(res, 403, `Only @${process.env.ALLOWED_EMAIL_DOMAIN || 'jemakwaste.com'} accounts are allowed`);
+    }
+
     const user = await authService.createUser(payload);
+    const token = generateToken(user);
 
     return res.status(201).json({
       ok: true,
       message: 'Account created. You are now signed in.',
       user,
+      token,
     });
   } catch (error) {
     if (error.code === ERROR_CODES.emailTaken) {

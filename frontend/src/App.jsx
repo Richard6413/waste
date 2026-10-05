@@ -18,6 +18,7 @@ import HelpSupport from './pages/Utilities/HelpSupport';
 import SystemSettings from './pages/Admin/SystemSettings';
 import { auth, onAuthStateChanged, signOut } from './config/firebase';
 import { getUserData } from './utils/userHelpers';
+import { loadDemoSession, clearDemoSession } from './utils/demoAuth';
 import './index.css';
 
 function App() {
@@ -32,7 +33,7 @@ function App() {
           // Get user data from Firestore
           const userData = await getUserData(user.uid);
           const token = await user.getIdToken();
-          
+           
           setSession({
             uid: user.uid,
             email: user.email,
@@ -52,7 +53,23 @@ function App() {
           });
         }
       } else {
-        setSession(null);
+        // Restore JWT-based session from localStorage
+        const token = localStorage.getItem('authToken');
+        const savedSession = loadDemoSession();
+        if (token && savedSession) {
+          setSession(savedSession);
+        } else if (token) {
+          // Token exists but no session data - try to decode or fetch user info
+          setSession({
+            uid: 'jwt-user',
+            email: '',
+            name: 'User',
+            role: 'user',
+            token: token,
+          });
+        } else {
+          setSession(null);
+        }
       }
       setLoading(false);
     });
@@ -61,6 +78,9 @@ function App() {
   }, []);
 
   const handleLogin = (userData) => {
+    if (userData.token) {
+      localStorage.setItem('authToken', userData.token);
+    }
     setSession(userData);
   };
 
@@ -70,6 +90,8 @@ function App() {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      clearDemoSession();
+      localStorage.removeItem('authToken');
       setSession(null);
     }
   };

@@ -48,8 +48,30 @@ export const api = {
   createUser: (data) => apiFetch('/users', { method: 'POST', body: JSON.stringify(data) }),
   
   // Auth
-  login: (credentials) => apiFetch('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
-  register: (data) => apiFetch('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  login: async (credentials) => {
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials),
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Login failed');
+    }
+    return data;
+  },
+  register: async (data) => {
+    const response = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.message || 'Registration failed');
+    }
+    return result;
+  },
 };
 
 export default api;
