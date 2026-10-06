@@ -1,208 +1,181 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Alert, Button, Chip, LinearProgress } from '@mui/material'
-import { AlertTriangle, CheckCircle2, Clock8, Loader2, MapPin, ThermometerSun } from 'lucide-react'
+// src/pages/ManageCollectionOps/CollectorView.jsx
+import { useState } from 'react';
+import { CheckCircle, XCircle, Clock, MapPin, User, Phone, Truck, AlertTriangle, MessageCircle } from 'lucide-react';
 
-// Hard-coded route context for the field collector mobile view.
-const TRUCK_ID = 'TRUCK-01'
-const ROUTE_ENDPOINT = `/api/ops/routes/${TRUCK_ID}/today`
+const CollectorView = () => {
+  const [stops, setStops] = useState([
+    { id: 1, name: '123 Main St', address: '123 Main St, Colombo 07', status: 'completed', time: '08:30', notes: 'Regular collection' },
+    { id: 2, name: '456 Oak Ave', address: '456 Oak Ave, Colombo 07', status: 'completed', time: '09:15', notes: 'Recyclables collected' },
+    { id: 3, name: '789 Pine Rd', address: '789 Pine Rd, Colombo 07', status: 'current', time: '10:00', notes: 'Special handling required' },
+    { id: 4, name: '101 Elm St', address: '101 Elm St, Colombo 07', status: 'pending', time: '10:30', notes: '' },
+    { id: 5, name: '202 Maple Dr', address: '202 Maple Dr, Colombo 07', status: 'pending', time: '11:00', notes: '' },
+  ]);
 
-// Provides the on-shift collector with live route progress and completion tools.
-export default function CollectorView() {
-  const [stops, setStops] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [pendingBin, setPendingBin] = useState('')
-  const [banner, setBanner] = useState(null)
+  const [currentStop, setCurrentStop] = useState(2);
 
-  // Load the current route once on mount and guard against stale state updates.
-  useEffect(() => {
-    let isMounted = true
-    async function load() {
-      try {
-        setLoading(true)
-        setBanner(null)
-        const response = await fetch(ROUTE_ENDPOINT)
-        if (!response.ok) {
-          throw new Error(`Route fetch failed with status ${response.status}`)
-        }
-        const payload = await response.json()
-        if (!isMounted) return
-        setStops(payload?.stops || [])
-      } catch (error) {
-        console.error('loadCollectorRoute error', error)
-        if (!isMounted) return
-        setBanner({ tone: 'error', message: 'Unable to load today’s route. Pull to refresh or try again shortly.' })
-      } finally {
-        if (isMounted) setLoading(false)
+  const handleComplete = (id) => {
+    setStops(stops.map(s => s.id === id ? { ...s, status: 'completed', time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) } : s));
+    const nextPending = stops.find(s => s.status === 'pending' && s.id > id);
+    if (nextPending) {
+      setStops(prev => prev.map(s => s.id === nextPending.id ? { ...s, status: 'current' } : s));
+      setCurrentStop(nextPending.id);
+    }
+  };
+
+  const handleSkip = (id) => {
+    if (window.confirm('Are you sure you want to skip this stop?')) {
+      setStops(stops.map(s => s.id === id ? { ...s, status: 'skipped' } : s));
+      const nextPending = stops.find(s => s.status === 'pending' && s.id > id);
+      if (nextPending) {
+        setStops(prev => prev.map(s => s.id === nextPending.id ? { ...s, status: 'current' } : s));
+        setCurrentStop(nextPending.id);
       }
     }
-    load()
-    return () => { isMounted = false }
-  }, [])
+  };
 
-  // Persist the collection event and optimistically update the local checklist state.
-  const markCollected = useCallback(async binId => {
-    try {
-      setPendingBin(binId)
-      setBanner(null)
-      const res = await fetch('/api/ops/collections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ binId, truckId: TRUCK_ID }),
-      })
-      if (!res.ok) {
-        setBanner({ tone: 'error', message: 'Could not mark as collected. Check connectivity and retry.' })
-        return
-      }
-      setStops(prev => prev.map(s => s.binId === binId ? { ...s, visited: true } : s))
-      setBanner({ tone: 'success', message: `${binId} recorded as collected.` })
-    } catch (error) {
-      console.error('markCollected error', error)
-      setBanner({ tone: 'error', message: 'Unexpected error. Please retry.' })
-    } finally {
-      setPendingBin('')
+  const handleReportIssue = (id) => {
+    const reason = prompt('Please describe the issue:');
+    if (reason) {
+      setStops(stops.map(s => s.id === id ? { ...s, status: 'issue', notes: reason } : s));
     }
-  }, [])
+  };
 
-  const completed = useMemo(() => stops.filter(stop => stop.visited).length, [stops])
-  const totalStops = stops.length
-  // Summaries keep the header progress indicator and remaining count in sync with the checklist.
-  const progress = totalStops === 0 ? 0 : Math.round((completed / totalStops) * 100)
+  const getStatusBadge = (status) => {
+    const colors = {
+      completed: 'status-success',
+      current: 'status-warning',
+      pending: 'status-neutral',
+      skipped: 'status-danger',
+      issue: 'status-danger'
+    };
+    return colors[status] || 'status-neutral';
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed': return <CheckCircle size={14} />;
+      case 'current': return <Clock size={14} />;
+      case 'pending': return <Clock size={14} />;
+      case 'skipped': return <XCircle size={14} />;
+      case 'issue': return <AlertTriangle size={14} />;
+      default: return null;
+    }
+  };
+
+  const completedCount = stops.filter(s => s.status === 'completed').length;
+  const progress = (completedCount / stops.length) * 100;
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-10">
-      <div className="glass-panel rounded-4xl p-6 shadow-xl shadow-slate-200/60">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h3 className="text-2xl font-semibold text-slate-900">Today’s Route</h3>
-            <p className="mt-1 text-sm text-slate-600">Truck TRUCK-01 • Colombo central wards</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Chip
-              icon={<Clock8 className="h-4 w-4" />}
-              label="Shift 05:30–13:30"
-              size="small"
-              variant="outlined"
-              sx={{ borderRadius: '999px', textTransform: 'none', fontWeight: 600 }}
-            />
-            <Chip
-              icon={<ThermometerSun className="h-4 w-4" />}
-              label="Clear skies"
-              size="small"
-              variant="outlined"
-              color="info"
-              sx={{ borderRadius: '999px', textTransform: 'none', fontWeight: 600 }}
-            />
-          </div>
+    <div className="workspace-content fade-in">
+      <div className="page-header">
+        <div>
+          <div className="page-kicker">OPERATIONS</div>
+          <h1 className="page-title">Collector View</h1>
+          <p className="page-description">Route: Colombo North A · Truck: UG-12</p>
         </div>
-
-        <div className="mt-6 space-y-3">
-          <div className="flex items-center justify-between text-xs uppercase tracking-wide text-slate-500">
-            <span>{completed} completed</span>
-            <span>{totalStops - completed} remaining</span>
-          </div>
-          <LinearProgress
-            variant="determinate"
-            value={progress}
-            sx={{ borderRadius: 999, height: 8, backgroundColor: 'rgba(148, 163, 184, 0.25)', '& .MuiLinearProgress-bar': { backgroundColor: '#10b981' } }}
-          />
+        <div className="flex items-center gap-2">
+          <span className="status status-success">
+            <span className="status-dot status-dot-green" />
+            On Route
+          </span>
         </div>
-
-        {banner && (
-          <Alert
-            severity={banner.tone === 'success' ? 'success' : 'error'}
-            icon={banner.tone === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-            variant="outlined"
-            sx={{ borderRadius: '16px', mt: 3 }}
-          >
-            {banner.message}
-          </Alert>
-        )}
       </div>
 
-      <section className="glass-panel rounded-4xl p-6 shadow-md">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h4 className="text-lg font-semibold text-slate-900">Stop checklist</h4>
-          <Chip
-            icon={<MapPin className="h-4 w-4" />}
-            label={`${totalStops} stops`}
-            size="small"
-            variant="outlined"
-            sx={{ borderRadius: '999px', textTransform: 'none', fontWeight: 600 }}
-          />
-        </div>
-
-        {loading && (
-          <div className="mt-5 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-100/80 px-4 py-4 text-sm text-slate-500">
-            <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
-            Loading route…
+      {/* Progress */}
+      <div className="workspace-panel mb-6">
+        <div className="panel-body">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-500">Route Progress</span>
+            <span className="font-semibold">{completedCount}/{stops.length} stops</span>
           </div>
-        )}
+          <div className="h-3 rounded-full bg-slate-100">
+            <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      </div>
 
-        {!loading && stops.length === 0 && (
-          <Alert
-            severity="info"
-            icon={<MapPin className="h-4 w-4" />}
-            variant="outlined"
-            sx={{ borderRadius: '16px', mt: 5 }}
-          >
-            No route planned yet. Check back once control centre confirms dispatch.
-          </Alert>
-        )}
-
-        {!loading && stops.length > 0 && (
-          <ul className="mt-4 space-y-4">
-            {stops.map(stop => {
-              const isVisited = Boolean(stop.visited)
-              const isPendingAction = pendingBin === stop.binId
-              // Disable the action while we persist the update to avoid double submissions.
+      {/* Current Stop */}
+      {stops.find(s => s.status === 'current') && (
+        <div className="workspace-panel mb-6 border-2 border-emerald-500">
+          <div className="panel-header bg-emerald-50">
+            <h2 className="panel-title">Current Stop</h2>
+          </div>
+          <div className="panel-body">
+            {(() => {
+              const current = stops.find(s => s.status === 'current');
               return (
-                <li key={stop.binId} className="flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                  <div className="flex min-w-[12rem] flex-col">
-                    <span className={`text-sm font-semibold ${isVisited ? 'text-slate-500 line-through' : 'text-slate-900'}`}>{stop.binId}</span>
-                    <span className={`flex items-center gap-1 text-xs ${isVisited ? 'text-slate-400 line-through' : 'text-slate-500'}`}>
-                      <MapPin className="h-3.5 w-3.5 text-slate-400" />
-                      Lat {stop.lat?.toFixed?.(4)} · Lon {stop.lon?.toFixed?.(4)}
-                    </span>
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center">
+                      <MapPin size={20} className="text-emerald-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg">{current.name}</h3>
+                      <p className="text-slate-500">{current.address}</p>
+                      {current.notes && (
+                        <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
+                          <AlertTriangle size={12} />
+                          {current.notes}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <Chip
-                    icon={isVisited ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                    label={isVisited ? 'Done' : 'Pending'}
-                    color={isVisited ? 'success' : 'warning'}
-                    variant={isVisited ? 'filled' : 'outlined'}
-                    size="small"
-                    sx={{ borderRadius: '999px', textTransform: 'none', fontWeight: 600 }}
-                  />
-                  <span className="flex items-center gap-1 text-xs text-slate-500">Est. load {stop.estKg} kg</span>
-                  {!isVisited && (
-                    <Button
-                      onClick={() => markCollected(stop.binId)}
-                      disabled={isPendingAction}
-                      variant="contained"
-                      color="success"
-                      size="small"
-                      startIcon={isPendingAction ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                      sx={{ borderRadius: '999px', textTransform: 'none', fontWeight: 600, ml: 'auto' }}
-                    >
-                      Mark collected
-                    </Button>
-                  )}
-                  {isVisited && <span className="ml-auto text-xs font-semibold text-emerald-600">✓ synced</span>}
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </section>
+                  <div className="flex flex-wrap gap-2">
+                    <button className="btn btn-primary" onClick={() => handleComplete(current.id)}>
+                      <CheckCircle size={16} />Mark Complete
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => handleSkip(current.id)}>
+                      <XCircle size={16} />Skip
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => handleReportIssue(current.id)}>
+                      <AlertTriangle size={16} />Report Issue
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
 
-      <aside className="glass-panel rounded-4xl p-6 shadow-inner">
-        <h4 className="text-lg font-semibold text-slate-900">Crew notes</h4>
-        <ul className="mt-3 grid gap-3 text-sm text-slate-600 md:grid-cols-2">
-          <li className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">Check bins BIN-003 and BIN-014 for contamination flags.</li>
-          <li className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">Report blocked access immediately via radio channel 2.</li>
-          <li className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">Capture photo evidence for spill incidents.</li>
-          <li className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3">Fuel top-up scheduled at 11:45 — do not exceed 70% load before stop #5.</li>
-        </ul>
-      </aside>
+      {/* All Stops */}
+      <div className="workspace-panel">
+        <div className="panel-header">
+          <h2 className="panel-title">All Stops</h2>
+        </div>
+        <div className="panel-body">
+          <div className="space-y-3">
+            {stops.map((stop) => (
+              <div
+                key={stop.id}
+                className={`flex items-center justify-between p-4 rounded-xl border ${
+                  stop.status === 'current' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    stop.status === 'completed' ? 'bg-emerald-100' :
+                    stop.status === 'current' ? 'bg-amber-100' :
+                    stop.status === 'skipped' || stop.status === 'issue' ? 'bg-red-100' : 'bg-slate-100'
+                  }`}>
+                    {getStatusIcon(stop.status)}
+                  </div>
+                  <div>
+                    <p className="font-semibold">{stop.name}</p>
+                    <p className="text-sm text-slate-500">{stop.address}</p>
+                    {stop.time && <p className="text-xs text-slate-400">{stop.time}</p>}
+                  </div>
+                </div>
+                <span className={`status ${getStatusBadge(stop.status)}`}>
+                  {stop.status}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
-  )
-}
+  );
+};
+
+export default CollectorView;

@@ -1,130 +1,143 @@
 // src/pages/Billing/CheckoutResultPage.jsx
-import { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CheckCircle, XCircle, Clock, ArrowLeft, Download, CreditCard, Calendar, User } from 'lucide-react';
 
 const CheckoutResultPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [status, setStatus] = useState('loading');
-  const [message, setMessage] = useState('');
+  const [searchParams] = useSearchParams();
+  const status = searchParams.get('status') || 'success';
+  const sessionId = searchParams.get('session_id') || 'demo-session';
 
-  useEffect(() => {
-    // Check the URL params for payment status
-    const params = new URLSearchParams(location.search);
-    const paymentStatus = params.get('status');
-    const paymentMessage = params.get('message');
+  const [payment, setPayment] = useState({
+    id: 'PAY-001',
+    invoice: 'INV-8821',
+    household: 'N. Perera',
+    amount: 2450,
+    method: 'Card',
+    status: status === 'success' ? 'completed' : status === 'cancel' ? 'cancelled' : 'pending',
+    date: new Date().toISOString().split('T')[0],
+    transactionId: sessionId
+  });
 
-    if (paymentStatus === 'success') {
-      setStatus('success');
-      setMessage(paymentMessage || 'Payment completed successfully!');
-    } else if (paymentStatus === 'failed') {
-      setStatus('failed');
-      setMessage(paymentMessage || 'Payment failed. Please try again.');
-    } else {
-      // Simulate payment processing
-      setTimeout(() => {
-        setStatus('success');
-        setMessage('Payment completed successfully!');
-      }, 2000);
-    }
-  }, [location]);
+  const handleDownloadReceipt = () => {
+    const content = `
+PAYMENT RECEIPT
+===============
+Payment ID: ${payment.id}
+Invoice: ${payment.invoice}
+Household: ${payment.household}
+Amount: LKR ${payment.amount.toLocaleString()}
+Method: ${payment.method}
+Status: ${payment.status}
+Date: ${payment.date}
+Transaction ID: ${payment.transactionId}
+    `.trim();
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `receipt-${payment.id}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
-  const getIcon = () => {
+  const getStatusConfig = (status) => {
     switch (status) {
-      case 'loading':
-        return <Loader2 className="h-16 w-16 text-emerald-500 animate-spin" />;
-      case 'success':
-        return <CheckCircle className="h-16 w-16 text-emerald-500" />;
-      case 'failed':
-        return <XCircle className="h-16 w-16 text-red-500" />;
+      case 'completed':
+        return {
+          icon: <CheckCircle size={48} className="text-emerald-500" />,
+          title: 'Payment Successful!',
+          message: 'Your payment has been processed successfully.',
+          bg: 'bg-emerald-50'
+        };
+      case 'cancelled':
+        return {
+          icon: <XCircle size={48} className="text-red-500" />,
+          title: 'Payment Cancelled',
+          message: 'Your payment was cancelled. Please try again.',
+          bg: 'bg-red-50'
+        };
       default:
-        return null;
+        return {
+          icon: <Clock size={48} className="text-amber-500" />,
+          title: 'Payment Pending',
+          message: 'Your payment is being processed. Please wait.',
+          bg: 'bg-amber-50'
+        };
     }
   };
 
-  const getTitle = () => {
-    switch (status) {
-      case 'loading':
-        return 'Processing Payment...';
-      case 'success':
-        return 'Payment Successful!';
-      case 'failed':
-        return 'Payment Failed';
-      default:
-        return '';
-    }
-  };
-
-  const getColor = () => {
-    switch (status) {
-      case 'loading':
-        return 'text-emerald-600';
-      case 'success':
-        return 'text-emerald-600';
-      case 'failed':
-        return 'text-red-600';
-      default:
-        return 'text-slate-600';
-    }
-  };
-
-  if (status === 'loading') {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <div className="mb-4">{getIcon()}</div>
-          <h2 className="text-xl font-semibold text-slate-900">{getTitle()}</h2>
-          <p className="mt-2 text-slate-500">Please wait while we process your payment...</p>
-        </div>
-      </div>
-    );
-  }
+  const statusConfig = getStatusConfig(payment.status);
 
   return (
     <div className="workspace-content fade-in">
-      <div className="mx-auto max-w-2xl">
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-          <div className="mb-4">{getIcon()}</div>
-          <h1 className={`text-2xl font-bold ${getColor()}`}>{getTitle()}</h1>
-          <p className="mt-2 text-slate-600">{message}</p>
-          
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <button
-              onClick={() => navigate('/')}
-              className="btn btn-primary"
-            >
-              Go to Dashboard
-            </button>
-            <button
-              onClick={() => navigate('/schedule')}
-              className="btn btn-secondary"
-            >
-              View Schedule
-            </button>
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <button className="btn btn-secondary btn-sm mb-4" onClick={() => navigate('/billing')}>
+            <ArrowLeft size={16} />Back to Billing
+          </button>
+          <div className={`w-24 h-24 rounded-full ${statusConfig.bg} flex items-center justify-center mx-auto mb-4`}>
+            {statusConfig.icon}
           </div>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">{statusConfig.title}</h1>
+          <p className="text-slate-500">{statusConfig.message}</p>
+        </div>
 
-          {status === 'success' && (
-            <div className="mt-6 rounded-xl bg-emerald-50 p-4 text-left">
-              <h3 className="font-semibold text-emerald-800">What's next?</h3>
-              <ul className="mt-2 space-y-1 text-sm text-emerald-700">
-                <li>• You will receive a confirmation email shortly</li>
-                <li>• Your collection has been scheduled</li>
-                <li>• You can track your collection in the schedule</li>
-              </ul>
+        <div className="workspace-panel mb-6">
+          <div className="panel-header">
+            <h2 className="panel-title">Payment Details</h2>
+          </div>
+          <div className="panel-body">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-500">Payment ID</p>
+                  <p className="font-semibold">{payment.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Invoice</p>
+                  <p className="font-semibold">{payment.invoice}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Household</p>
+                  <p className="font-semibold">{payment.household}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Amount</p>
+                  <p className="font-semibold text-lg">LKR {payment.amount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Method</p>
+                  <p className="font-semibold">{payment.method}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Date</p>
+                  <p className="font-semibold">{payment.date}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Transaction ID</p>
+                  <p className="font-semibold font-mono text-xs">{payment.transactionId}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Status</p>
+                  <span className={`status ${payment.status === 'completed' ? 'status-success' : payment.status === 'cancelled' ? 'status-danger' : 'status-warning'}`}>
+                    {payment.status}
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+        </div>
 
-          {status === 'failed' && (
-            <div className="mt-6 rounded-xl bg-red-50 p-4 text-left">
-              <h3 className="font-semibold text-red-800">Need help?</h3>
-              <ul className="mt-2 space-y-1 text-sm text-red-700">
-                <li>• Check your payment method and try again</li>
-                <li>• Contact support for assistance</li>
-                <li>• You can retry the payment from your schedule</li>
-              </ul>
-            </div>
-          )}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <button className="btn btn-secondary" onClick={handleDownloadReceipt}>
+            <Download size={16} />Download Receipt
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate('/billing/invoices')}>
+            <CreditCard size={16} />View Invoices
+          </button>
         </div>
       </div>
     </div>
