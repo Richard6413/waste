@@ -18,6 +18,7 @@ import {
   sendPasswordResetEmail
 } from '../../config/firebase';
 import { getUserData } from '../../utils/userHelpers';
+import { signInDemo, DEMO_ACCOUNTS } from '../../utils/demoAuth';
 
 export default function LoginPage({ onLogin = () => {} }) {
     const navigate = useNavigate();
@@ -68,22 +69,28 @@ export default function LoginPage({ onLogin = () => {} }) {
         setLoading(true);
         setFeedback(null);
 
-        // Local demo accounts work without backend; fall through to backend auth when they don't match.
-        const demoSession = signInDemo(form.email, form.password);
-        if (demoSession) {
-            setFeedback({ type: 'success', message: 'Signed in with a local demo account.' });
-            onLogin(demoSession);
-            setLoading(false);
-            navigate(demoSession.role === 'admin' ? '/adminDashboard' : '/', { replace: true });
-            return;
+        // Check if this is a demo account
+        const isDemoAccount = DEMO_ACCOUNTS.some(
+            a => a.email.toLowerCase() === form.email.trim().toLowerCase()
+        );
+
+        // For demo accounts, try local demo session FIRST (instant)
+        if (isDemoAccount) {
+            const demoSession = signInDemo(form.email, form.password);
+            if (demoSession) {
+                setFeedback({ type: 'success', message: 'Signed in with demo account.' });
+                onLogin(demoSession);
+                setLoading(false);
+                navigate(demoSession.role === 'admin' ? '/adminDashboard' : '/', { replace: true });
+                return;
+            }
         }
 
+        // Try backend auth (fast, local API)
         try {
-            // Use backend auth endpoint with JWT
             const response = await api.login(form.email, form.password);
             
             if (response.ok && response.token) {
-                // Store JWT token
                 localStorage.setItem('authToken', response.token);
                 
                 const sessionData = {
